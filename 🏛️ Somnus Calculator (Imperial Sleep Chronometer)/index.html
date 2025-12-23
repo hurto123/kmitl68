@@ -1,0 +1,448 @@
+import React, { useState, useEffect } from 'react';
+import { Moon, Sun, Clock, RotateCcw, Crown, Shield, Scroll, Play, Pause, Square, Hourglass, Globe } from
+'lucide-react';
+
+// --- ฐานข้อมูลคำแปล (Translations) ---
+const translations = {
+TH: {
+subtitle: 'เครื่องคำนวณเวลาจักรวรรดิ',
+tabCalc: 'Calculatio (คำนวณ)',
+tabStop: 'Chronos (จับเวลา)',
+bedTimeLabel: 'เวลาเข้านอน (AD SOMNUM)',
+wakeTimeLabel: 'เวลาตื่นนอน (AD SURGERE)',
+calculateBtn: 'คำนวณเวลา',
+resultTitle: 'เวลาที่ใช้ในการนิทรา',
+hours: 'ชม.',
+minutes: 'นาที',
+cyclesApprox: 'ประมาณ',
+cyclesUnit: 'รอบการนอน (Cycles)',
+resetBtn: 'คำนวณใหม่ (REDI)',
+stopwatchTitle: 'Chronos',
+startBtn: 'INCIPE (เริ่ม)',
+stopBtn: 'SISTE (หยุด)',
+resetStopwatchBtn: 'REDI (รีเซ็ต)',
+quote: '"Tempus fugit" (เวลาบินผ่านไปอย่างรวดเร็ว)',
+ranks: {
+imperator: { title: 'IMPERATOR (จักรพรรดิ)', desc: 'การนอนหลับที่สมบูรณ์แบบ ทรงพลังดั่งเทพเจ้า' },
+legionary: { title: 'LEGIONARY (ทหารกล้า)', desc: 'พักผ่อนเพียงพอ พร้อมรบสำหรับวันใหม่' },
+nobilis: { title: 'NOBILIS (ขุนนางจอมสำราญ)', desc: 'ท่านนอนมากเกินไป ระวังกายาจะเฉื่อยชา' },
+plebeian: { title: 'PLEBEIAN (สามัญชนผู้ตรากตรำ)', desc: 'ท่านนอนน้อยเกินไป ร่างกายต้องการพักผ่อน!' },
+}
+},
+EN: {
+subtitle: 'IMPERIAL CHRONOMETER',
+tabCalc: 'Calculatio (Calculator)',
+tabStop: 'Chronos (Stopwatch)',
+bedTimeLabel: 'Bed Time (AD SOMNUM)',
+wakeTimeLabel: 'Wake Time (AD SURGERE)',
+calculateBtn: 'CALCULATE',
+resultTitle: 'TIME SPENT IN SLUMBER',
+hours: 'Hrs',
+minutes: 'Mins',
+cyclesApprox: 'Approx.',
+cyclesUnit: 'Sleep Cycles',
+resetBtn: 'RESET (REDI)',
+stopwatchTitle: 'Chronos',
+startBtn: 'INCIPE (START)',
+stopBtn: 'SISTE (STOP)',
+resetStopwatchBtn: 'REDI (RESET)',
+quote: '"Tempus fugit" (Time flies)',
+ranks: {
+imperator: { title: 'IMPERATOR (The Emperor)', desc: 'Perfect sleep. Powerful as the gods.' },
+legionary: { title: 'LEGIONARY (The Soldier)', desc: 'Adequate rest. Ready for the new day.' },
+nobilis: { title: 'NOBILIS (The Noble)', desc: 'You sleep too much. Beware of lethargy.' },
+plebeian: { title: 'PLEBEIAN (The Commoner)', desc: 'You sleep too little. The body needs rest!' },
+}
+}
+};
+
+const SomnusCalculator = () => {
+// --- States ---
+const [language, setLanguage] = useState('TH'); // 'TH' | 'EN'
+const t = translations[language]; // ตัวย่อสำหรับเข้าถึงคำแปลปัจจุบัน
+
+// State สำหรับ Calculator
+const [bedTime, setBedTime] = useState('22:00');
+const [wakeTime, setWakeTime] = useState('06:00');
+const [duration, setDuration] = useState(null);
+const [cycles, setCycles] = useState(null);
+const [rank, setRank] = useState(null);
+const [showResult, setShowResult] = useState(false);
+
+// State สำหรับ System
+const [currentTime, setCurrentTime] = useState(new Date());
+const [activeTab, setActiveTab] = useState('calculator');
+
+// State สำหรับ Stopwatch
+const [stopwatchTime, setStopwatchTime] = useState(0);
+const [isStopwatchRunning, setIsStopwatchRunning] = useState(false);
+
+// --- Effects ---
+useEffect(() => {
+const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+return () => clearInterval(timer);
+}, []);
+
+useEffect(() => {
+let interval;
+if (isStopwatchRunning) {
+interval = setInterval(() => {
+setStopwatchTime((prev) => prev + 10);
+}, 10);
+} else {
+clearInterval(interval);
+}
+return () => clearInterval(interval);
+}, [isStopwatchRunning]);
+
+// Update rank description immediately when language changes if result is shown
+useEffect(() => {
+if (showResult && duration) {
+determineRank(duration.hours);
+}
+}, [language]);
+
+
+// --- Functions ---
+const toggleLanguage = () => {
+setLanguage((prev) => (prev === 'TH' ? 'EN' : 'TH'));
+};
+
+const calculateSleep = () => {
+const start = new Date(`2000-01-01T${bedTime}`);
+let end = new Date(`2000-01-01T${wakeTime}`);
+
+if (end < start) { end.setDate(end.getDate() + 1); } const diffMs=end - start; const diffHrs=Math.floor(diffMs /
+    3600000); const diffMins=Math.round(((diffMs % 3600000) / 60000)); const totalMinutes=(diffHrs * 60) + diffMins;
+    const calculatedCycles=(totalMinutes / 90).toFixed(1); setDuration({ hours: diffHrs, minutes: diffMins });
+    setCycles(calculatedCycles); determineRank(diffHrs); setShowResult(true); }; const determineRank=(hours)=> {
+    const rankData = t.ranks;
+    if (hours >= 7 && hours
+    <= 9) { setRank({ ...rankData.imperator, color: 'text-yellow-600' , icon: <Crown size={48} /> });
+    } else if (hours >= 6 && hours
+    < 7) { setRank({ ...rankData.legionary, color: 'text-red-700' , icon: <Shield size={48} /> });
+    } else if (hours > 9) {
+    setRank({ ...rankData.nobilis, color: 'text-purple-700', icon:
+    <Scroll size={48} /> });
+    } else {
+    setRank({ ...rankData.plebeian, color: 'text-gray-600', icon:
+    <RotateCcw size={48} /> });
+    }
+    };
+
+    const resetCalculator = () => {
+    setShowResult(false);
+    setRank(null);
+    };
+
+    const formatStopwatch = (time) => {
+    const mins = Math.floor((time / 60000) % 60);
+    const secs = Math.floor((time / 1000) % 60);
+    const ms = Math.floor((time / 10) % 100);
+    return (
+    <div className="flex items-end gap-1 font-mono tracking-wider">
+        <span className="text-6xl w-[4.5rem] text-center">{mins.toString().padStart(2, '0')}</span>
+        <span className="text-4xl pb-2 opacity-50">:</span>
+        <span className="text-6xl w-[4.5rem] text-center">{secs.toString().padStart(2, '0')}</span>
+        <span className="text-4xl pb-2 opacity-50">.</span>
+        <span className="text-4xl w-12 text-center text-red-900">{ms.toString().padStart(2, '0')}</span>
+    </div>
+    );
+    };
+
+    // Custom CSS for Animations
+    const customStyles = `
+    @keyframes fadeInUp {
+    from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+    }
+    to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    }
+    }
+    .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out both;
+    }
+    .btn-hover-effect {
+    transition: all 0.3s ease;
+    }
+    .btn-hover-effect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .btn-hover-effect:active {
+    transform: translateY(1px);
+    }
+    `;
+
+    return (
+    <div
+        className="min-h-screen flex items-center justify-center bg-[#f4f1ea] font-serif p-4 relative overflow-hidden transition-all duration-500">
+        <style>
+            {
+                customStyles
+            }
+        </style>
+        {/* Background Texture & Decoration */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+            backgroundImage: 'radial-gradient(#8b5cf6 0.5px, transparent 0.5px)' , backgroundSize: '15px 15px' }}></div>
+        <div
+            className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-700 shadow-sm">
+        </div>
+        <div
+            className="absolute bottom-0 left-0 w-full h-3 bg-gradient-to-r from-yellow-700 via-yellow-500 to-yellow-700 shadow-sm">
+        </div>
+
+        {/* Main Container - The Temple */}
+        <div
+            className="relative z-10 w-full max-w-lg bg-[#faf9f6] border-y-4 border-x-2 border-double border-yellow-700 shadow-2xl rounded-sm overflow-hidden flex flex-col transition-all duration-300">
+
+            {/* Header / Pediment */}
+            <div
+                className="bg-red-900 text-white p-5 text-center border-b-4 border-yellow-700 relative shrink-0 shadow-md">
+                {/* Language Switcher */}
+                <button onClick={toggleLanguage}
+                    className="absolute top-3 right-3 flex items-center gap-1 bg-red-950/60 hover:bg-red-950 text-yellow-200 px-2 py-1 rounded-full text-xs font-bold tracking-wider border border-yellow-600/50 transition-all duration-300 hover:scale-105">
+                    <Globe size={12} />
+                    {language === 'TH' ? 'TH' : 'EN'}
+                </button>
+
+                <div className="absolute top-3 left-3 text-yellow-500 opacity-40 text-[0.6rem] tracking-[0.2em]">SPQR •
+                    MMXXV</div>
+
+                <h1 className="text-4xl font-bold tracking-[0.2em] uppercase mt-2" style={{
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.6)' }}>
+                    Somnus
+                </h1>
+                <p className="text-yellow-400 text-xs tracking-[0.15em] uppercase mt-1 opacity-90">{t.subtitle}</p>
+
+                {/* Live Clock Display */}
+                <div
+                    className="mt-4 flex justify-center items-center gap-2 bg-red-950/70 py-1 px-4 rounded-full mx-auto w-fit border border-yellow-600/40 shadow-inner">
+                    <Clock size={14} className="text-yellow-400 animate-pulse" />
+                    <span className="font-mono text-lg tracking-widest text-yellow-100">
+                        {currentTime.toLocaleTimeString(language === 'TH' ? 'th-TH' : 'en-US', { hour12: false })}
+                    </span>
+                </div>
+            </div>
+
+            {/* Navigation Tabs (Stone Tabs) */}
+            <div className="flex border-b-2 border-stone-300 bg-stone-200/80 backdrop-blur-sm relative z-20 shadow-sm">
+                <button onClick={()=> setActiveTab('calculator')}
+                    className={`flex-1 py-4 text-xs md:text-sm tracking-widest font-bold uppercase transition-all
+                    duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ${activeTab ===
+                    'calculator' ? 'bg-[#faf9f6] text-red-900' : 'text-stone-500 hover:text-red-800
+                    hover:bg-stone-100'}`}
+                    >
+                    <div className={`absolute bottom-0 left-0 h-1 bg-red-900 transition-all duration-300
+                        ${activeTab==='calculator' ? 'w-full' : 'w-0 group-hover:w-full opacity-50' }`}></div>
+                    <Moon size={16} className={`transition-transform duration-300 ${activeTab==='calculator'
+                        ? 'scale-110' : '' }`} />
+                    <span>{t.tabCalc}</span>
+                </button>
+                <div className="w-[2px] bg-stone-300 my-2 opacity-50"></div>
+                <button onClick={()=> setActiveTab('stopwatch')}
+                    className={`flex-1 py-4 text-xs md:text-sm tracking-widest font-bold uppercase transition-all
+                    duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ${activeTab ===
+                    'stopwatch' ? 'bg-[#faf9f6] text-red-900' : 'text-stone-500 hover:text-red-800
+                    hover:bg-stone-100'}`}
+                    >
+                    <div className={`absolute bottom-0 left-0 h-1 bg-red-900 transition-all duration-300
+                        ${activeTab==='stopwatch' ? 'w-full' : 'w-0 group-hover:w-full opacity-50' }`}></div>
+                    <Hourglass size={16} className={`transition-transform duration-300 ${activeTab==='stopwatch'
+                        ? 'scale-110' : '' }`} />
+                    <span>{t.tabStop}</span>
+                </button>
+            </div>
+
+            {/* Content Area */}
+            <div
+                className="p-8 flex flex-col items-center space-y-8 flex-grow bg-[url('https://www.transparenttextures.com/patterns/cream-paper.png')] bg-blend-multiply relative">
+
+                {activeTab === 'calculator' ? (
+                /* --- CALCULATOR MODE --- */
+                !showResult ? (
+                <div key="input-form" className="w-full space-y-6 animate-fade-in-up">
+                    <div className="flex flex-col space-y-2 group">
+                        <label
+                            className="text-red-900 font-bold tracking-wider flex items-center gap-2 text-sm transition-colors group-hover:text-red-700">
+                            <Moon size={18} /> {t.bedTimeLabel}
+                        </label>
+                        <input type="time" value={bedTime} onChange={(e)=> setBedTime(e.target.value)}
+                        className="w-full p-4 text-3xl bg-[#f4f1ea]/80 border-2 border-stone-300 focus:border-red-900
+                        outline-none text-center rounded-sm shadow-inner text-stone-800 transition-all focus:bg-white
+                        focus:shadow-md font-mono"
+                        />
+                    </div>
+
+                    <div className="flex flex-col space-y-2 group">
+                        <label
+                            className="text-red-900 font-bold tracking-wider flex items-center gap-2 text-sm transition-colors group-hover:text-red-700">
+                            <Sun size={18} /> {t.wakeTimeLabel}
+                        </label>
+                        <input type="time" value={wakeTime} onChange={(e)=> setWakeTime(e.target.value)}
+                        className="w-full p-4 text-3xl bg-[#f4f1ea]/80 border-2 border-stone-300 focus:border-red-900
+                        outline-none text-center rounded-sm shadow-inner text-stone-800 transition-all focus:bg-white
+                        focus:shadow-md font-mono"
+                        />
+                    </div>
+
+                    <button onClick={calculateSleep}
+                        className="w-full group relative px-8 py-4 bg-red-900 text-white font-bold text-lg tracking-widest uppercase shadow-md border-2 border-yellow-600 mt-6 rounded-sm overflow-hidden btn-hover-effect">
+                        <span className="flex items-center justify-center gap-2 relative z-10">
+                            {t.calculateBtn}
+                            <Clock size={20} />
+                        </span>
+                        {/* Simple shine effect */}
+                        <div
+                            className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-all duration-700 group-hover:left-[100%]">
+                        </div>
+                    </button>
+                </div>
+                ) : (
+                /* --- RESULT SECTION --- */
+                <div key="result-view" className="w-full flex flex-col items-center animate-fade-in-up">
+                    <div
+                        className="text-center space-y-2 mb-8 p-6 bg-white/50 rounded-lg border border-stone-200 shadow-sm relative overflow-hidden">
+                        <div
+                            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-900/30 to-transparent">
+                        </div>
+                        <h2 className="text-stone-500 uppercase tracking-widest text-xs font-bold">{t.resultTitle}</h2>
+                        <div
+                            className="text-5xl font-bold text-red-950 my-3 flex items-baseline justify-center gap-2 font-mono tracking-tighter">
+                            {duration.hours} <span
+                                className="text-xl text-stone-500 font-serif uppercase">{t.hours}</span>
+                            {duration.minutes} <span
+                                className="text-xl text-stone-500 font-serif uppercase">{t.minutes}</span>
+                        </div>
+                        <div
+                            className="text-sm text-stone-700 bg-yellow-600/10 inline-block px-4 py-1 rounded-full mt-2 border border-yellow-600/30">
+                            {t.cyclesApprox} <span className="font-bold text-red-900">{cycles}</span> {t.cyclesUnit}
+                        </div>
+                    </div>
+
+                    <div className="w-full border-t border-stone-300/50 my-2 relative">
+                        <div
+                            className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-[#faf9f6] p-1 rounded-full text-yellow-600 border border-yellow-600/30 shadow-sm">
+                            <Crown size={24} className="animate-pulse" />
+                        </div>
+                    </div>
+
+                    <div className={`text-center p-6 bg-gradient-to-b from-white/80 to-stone-100/80 border
+                        border-stone-300 w-full shadow-lg rounded-lg mt-6 transition-all duration-500 hover:shadow-xl
+                        relative overflow-hidden group ${rank.color.replace('text', 'border' ).replace('700', '200'
+                        ).replace('600', '200' )}`}>
+                        {/* Background Icon Faded */}
+                        <div className={`absolute -right-4 -bottom-4 opacity-5 transform rotate-12 scale-[2.5]
+                            transition-transform duration-700 group-hover:scale-[3] ${rank.color}`}>
+                            {rank.icon}
+                        </div>
+
+                        <div className={`flex justify-center mb-4 ${rank.color} relative z-10 scale-110 transform
+                            transition-transform duration-500 group-hover:scale-125 group-hover:-translate-y-1
+                            drop-shadow-md`}>
+                            {rank.icon}
+                        </div>
+                        <h3 className={`text-2xl font-bold uppercase tracking-widest mb-3 ${rank.color} relative z-10
+                            drop-shadow-sm`}>
+                            {rank.title}
+                        </h3>
+                        <p className="text-stone-600 italic relative z-10 font-medium">
+                            "{rank.desc}"
+                        </p>
+                    </div>
+
+                    <button onClick={resetCalculator}
+                        className="mt-10 text-stone-500 hover:text-red-900 tracking-wider flex items-center gap-2 text-sm uppercase font-bold transition-all duration-300 hover:underline underline-offset-4 group">
+                        <RotateCcw size={16} className="transition-transform duration-300 group-hover:-rotate-180" />
+                        {t.resetBtn}
+                    </button>
+                </div>
+                )
+                ) : (
+                /* --- STOPWATCH MODE (CHRONOS) --- */
+                <div key="stopwatch-view"
+                    className="w-full flex flex-col items-center animate-fade-in-up py-4 relative">
+                    <div
+                        className="bg-[#f4f1ea] border-4 border-double border-stone-300 p-8 rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)] mb-10 relative overflow-hidden group transition-all duration-500 hover:shadow-[inset_0_5px_15px_rgba(0,0,0,0.15)] hover:border-stone-400">
+                        {/* Rotating Ring effect */}
+                        <div className={`absolute inset-0 border-[3px] border-dashed border-stone-300/50 rounded-full
+                            ${isStopwatchRunning ? 'animate-[spin_10s_linear_infinite]'
+                            : 'transition-transform duration-1000' }`} style={{ transform: isStopwatchRunning ? ''
+                            : 'rotate(0deg)' }}></div>
+
+                        <div
+                            className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#f4f1ea] px-3 py-1 text-stone-500 text-[0.65rem] tracking-[0.3em] uppercase font-bold border border-stone-200 rounded-full shadow-sm z-10">
+                            {t.stopwatchTitle}
+                        </div>
+                        <div
+                            className="text-stone-800 relative z-10 scale-105 transition-transform duration-300 group-hover:scale-110">
+                            {formatStopwatch(stopwatchTime)}
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4 w-full justify-center max-w-xs">
+                        {!isStopwatchRunning ? (
+                        <button onClick={()=> setIsStopwatchRunning(true)}
+                            className="flex-1 bg-gradient-to-br from-green-800 to-green-900 text-white p-4 font-bold
+                            uppercase tracking-wider border-2 border-green-950/30 shadow-md flex justify-center
+                            items-center gap-2 rounded-sm btn-hover-effect"
+                            >
+                            <Play size={20} className="fill-current" /> {t.startBtn}
+                        </button>
+                        ) : (
+                        <button onClick={()=> setIsStopwatchRunning(false)}
+                            className="flex-1 bg-gradient-to-br from-red-900 to-red-950 text-white p-4 font-bold
+                            uppercase tracking-wider border-2 border-red-950/30 shadow-md flex justify-center
+                            items-center gap-2 rounded-sm btn-hover-effect animate-pulse"
+                            >
+                            <Pause size={20} className="fill-current" /> {t.stopBtn}
+                        </button>
+                        )}
+
+                        <button onClick={()=> {setIsStopwatchRunning(false); setStopwatchTime(0);}}
+                            className="bg-gradient-to-br from-stone-200 to-stone-300 text-stone-700 p-4 font-bold
+                            uppercase tracking-wider border-2 border-stone-400/50 shadow-md flex justify-center
+                            items-center gap-2 rounded-sm hover:bg-stone-300 hover:text-stone-900 btn-hover-effect"
+                            disabled={isStopwatchRunning}
+                            >
+                            <Square size={18} className="fill-current opacity-80" />
+                        </button>
+                    </div>
+
+                    <div className="mt-10 text-stone-500 text-xs italic text-center px-4 opacity-70">
+                        {t.quote}
+                    </div>
+                </div>
+                )}
+            </div>
+
+            {/* Footer / Base */}
+            <div
+                className="bg-stone-200/80 backdrop-blur-md p-2 text-center border-t-2 border-stone-300 shrink-0 relative z-20">
+                <div
+                    className="flex justify-center space-x-3 text-stone-400 text-[0.6rem] tracking-[0.3em] uppercase font-bold">
+                    <span className="hover:text-red-900 transition-colors cursor-default">Senatus</span>
+                    <span>•</span>
+                    <span className="hover:text-red-900 transition-colors cursor-default">Populusque</span>
+                    <span>•</span>
+                    <span className="hover:text-red-900 transition-colors cursor-default">Romanus</span>
+                </div>
+            </div>
+        </div>
+
+        {/* Pillars Decoration (Side) - Enhanced with shadow and depth */}
+        <div className="hidden md:block absolute left-6 top-0 bottom-0 w-16 bg-gradient-to-r from-stone-300 via-stone-100 to-stone-300 border-x-2 border-stone-400 opacity-60 shadow-[5px_0_15px_rgba(0,0,0,0.1)]"
+            style={{backgroundImage: 'linear-gradient(to bottom, transparent 95%, rgba(0,0,0,0.1) 100%)' ,
+            backgroundSize: '100% 40px' }}></div>
+        <div className="hidden md:block absolute right-6 top-0 bottom-0 w-16 bg-gradient-to-r from-stone-300 via-stone-100 to-stone-300 border-x-2 border-stone-400 opacity-60 shadow-[-5px_0_15px_rgba(0,0,0,0.1)]"
+            style={{backgroundImage: 'linear-gradient(to bottom, transparent 95%, rgba(0,0,0,0.1) 100%)' ,
+            backgroundSize: '100% 40px' }}></div>
+
+    </div>
+    );
+    };
+
+    export default SomnusCalculator;
