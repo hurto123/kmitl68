@@ -1,0 +1,27 @@
+# =============================================================================
+# Legal AI Complete - Dependencies
+# ระบบ AI วิเคราะห์เอกสารกฎหมายแบบ Local-first
+# =============================================================================
+
+# LLM & RAG Framework
+langchain>=0.3.0
+langchain-ollama>=0.2.0
+langchain-community>=0.3.0
+langchain-chroma>=0.1.4
+langchain-core>=0.3.0
+
+# Document Processing
+pdfplumber>=0.11.0
+python-docx>=1.1.0
+
+# Vector Store
+chromadb>=0.5.0
+
+# GUI Framework
+gradio>=5.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+
+# Text Processing
+tiktoken>=0.7.0
